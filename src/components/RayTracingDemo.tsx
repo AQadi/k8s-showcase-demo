@@ -87,11 +87,11 @@ export const RayTracingDemo = () => {
         setElapsedTime(prev => prev + 0.1);
         
         if (mode === "single") {
-          // Single container: slower, sequential processing
+          // Single container: much slower, sequential processing (~60-70 seconds)
           setContainers(prev => prev.map(container => {
-            const newProgress = Math.min(container.progress + 0.4, 100);
-            const cpu = newProgress < 100 ? 85 + Math.random() * 10 : 5;
-            const memory = newProgress < 100 ? 70 + Math.random() * 20 : 10;
+            const newProgress = Math.min(container.progress + 0.25, 100);
+            const cpu = newProgress < 100 ? 95 + Math.random() * 5 : 5;
+            const memory = newProgress < 100 ? 80 + Math.random() * 15 : 10;
             
             return {
               ...container,
@@ -102,23 +102,23 @@ export const RayTracingDemo = () => {
             };
           }));
           
-          setOverallProgress(prev => Math.min(prev + 0.4, 100));
+          setOverallProgress(prev => Math.min(prev + 0.25, 100));
         } else {
-          // Distributed: faster, parallel processing with some dependencies
+          // Distributed: much faster, parallel processing (~25-30 seconds)
           setContainers(prev => prev.map((container, index) => {
             let progressIncrement = 0;
             
             // Geometry engine starts immediately
             if (index === 0) {
-              progressIncrement = 0.8;
+              progressIncrement = 1.2;
             }
-            // Lighting starts after geometry is 30% done
-            else if (index === 1 && prev[0].progress > 30) {
-              progressIncrement = 0.7;
+            // Lighting starts after geometry is 20% done
+            else if (index === 1 && prev[0].progress > 20) {
+              progressIncrement = 1.4;
             }
-            // Post-processing starts after lighting is 50% done
-            else if (index === 2 && prev[1].progress > 50) {
-              progressIncrement = 0.9;
+            // Post-processing starts after lighting is 30% done
+            else if (index === 2 && prev[1].progress > 30) {
+              progressIncrement = 1.6;
             }
             
             const newProgress = Math.min(container.progress + progressIncrement, 100);
