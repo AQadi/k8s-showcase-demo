@@ -1,6 +1,11 @@
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Sphere, Box, Torus, Environment, PerspectiveCamera } from "@react-three/drei";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Monitor, Layers, Sparkles } from "lucide-react";
+import { Monitor, Cpu, Zap } from "lucide-react";
+import * as THREE from "three";
+import { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 
 interface Container {
   id: string;
@@ -19,136 +24,161 @@ interface RenderVisualizationProps {
   isRunning: boolean;
 }
 
-export const RenderVisualization = ({ 
-  progress, 
-  mode, 
-  containers, 
-  isRunning 
-}: RenderVisualizationProps) => {
+// 3D Scene Components
+const GeometryObjects = ({ progress, mode }: { progress: number; mode: string }) => {
+  const meshRef = useRef<THREE.Group>(null);
   
-  // Generate render preview based on progress
-  const renderBlocks = Array.from({ length: 16 }, (_, i) => {
-    const blockProgress = Math.max(0, Math.min(100, (progress - (i * 6.25))));
-    return blockProgress;
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y = state.clock.elapsedTime * 0.2;
+    }
   });
+
+  const objectCount = useMemo(() => {
+    return mode === "distributed" ? Math.floor((progress / 100) * 15) : Math.floor((progress / 100) * 8);
+  }, [progress, mode]);
+
+  return (
+    <group ref={meshRef}>
+      {Array.from({ length: objectCount }).map((_, i) => {
+        const angle = (i / objectCount) * Math.PI * 2;
+        const radius = 2 + Math.sin(i * 0.5) * 0.5;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const y = Math.sin(i * 0.8) * 0.5;
+        
+        if (i % 3 === 0) {
+          return (
+            <Box key={i} position={[x, y, z]} args={[0.3, 0.3, 0.3]}>
+              <meshStandardMaterial color={`hsl(${i * 30}, 70%, 60%)`} />
+            </Box>
+          );
+        } else if (i % 3 === 1) {
+          return (
+            <Sphere key={i} position={[x, y, z]} args={[0.2]}>
+              <meshStandardMaterial color={`hsl(${i * 45}, 80%, 50%)`} />
+            </Sphere>
+          );
+        } else {
+          return (
+            <Torus key={i} position={[x, y, z]} args={[0.15, 0.08, 8, 16]}>
+              <meshStandardMaterial color={`hsl(${i * 60}, 60%, 70%)`} />
+            </Torus>
+          );
+        }
+      })}
+    </group>
+  );
+};
+
+const LightingSystem = ({ containers, mode }: { containers: any[]; mode: string }) => {
+  const lightRef = useRef<THREE.DirectionalLight>(null);
+  
+  useFrame((state) => {
+    if (lightRef.current) {
+      lightRef.current.position.x = Math.cos(state.clock.elapsedTime) * 3;
+      lightRef.current.position.z = Math.sin(state.clock.elapsedTime) * 3;
+    }
+  });
+
+  const lightingActive = mode === "single" || containers[1]?.status !== "idle";
+  const lightIntensity = lightingActive ? 1.5 : 0.3;
+
+  return (
+    <>
+      <ambientLight intensity={0.2} />
+      <directionalLight
+        ref={lightRef}
+        position={[3, 3, 3]}
+        intensity={lightIntensity}
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+      />
+      <pointLight position={[-3, 2, -3]} intensity={lightingActive ? 0.8 : 0.1} color="#ff6b6b" />
+      <pointLight position={[3, -2, 3]} intensity={lightingActive ? 0.8 : 0.1} color="#4ecdc4" />
+    </>
+  );
+};
+
+const PostProcessingEffects = ({ containers, mode }: { containers: any[]; mode: string }) => {
+  const postActive = mode === "single" || containers[2]?.status !== "idle";
+  
+  return (
+    <>
+      {postActive && <Environment preset="studio" />}
+      <fog attach="fog" args={postActive ? ["#202020", 8, 15] : ["#000000", 5, 10]} />
+    </>
+  );
+};
+
+export const RenderVisualization = ({ progress, mode, containers, isRunning }: RenderVisualizationProps) => {
+  const getStageDescription = () => {
+    if (mode === "single") {
+      if (progress < 25) return "Primary Ray Generation";
+      if (progress < 50) return "Ray-Object Intersection";
+      if (progress < 75) return "Lighting Calculation";
+      return "Final Pixel Assembly";
+    } else {
+      const geometryDone = containers[0]?.status === "completed";
+      const lightingDone = containers[1]?.status === "completed";
+      const postDone = containers[2]?.status === "completed";
+      
+      if (!geometryDone) return "Geometry Processing Active";
+      if (!lightingDone) return "Lighting & Shadows Processing";
+      if (!postDone) return "Post-processing & Effects";
+      return "Render Complete";
+    }
+  };
 
   return (
     <Card className="p-6">
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold flex items-center gap-2">
             <Monitor className="w-5 h-5" />
-            Render Output
+            Real-Time Ray Traced Scene
           </h3>
-          <Badge variant={mode === "distributed" ? "default" : "secondary"}>
-            {mode === "single" ? "Sequential Processing" : "Parallel Processing"}
+          <Badge variant={progress === 100 ? "default" : "secondary"}>
+            {getStageDescription()}
           </Badge>
         </div>
-
-        {/* Render Grid */}
-        <div className="relative">
-          <div className="grid grid-cols-4 gap-2 aspect-square max-w-md mx-auto">
-            {renderBlocks.map((blockProgress, i) => (
-              <div
-                key={i}
-                className="aspect-square rounded-lg border-2 border-border overflow-hidden relative"
-              >
-                {/* Base dark background */}
-                <div className="absolute inset-0 bg-secondary"></div>
-                
-                {/* Render progress fill */}
-                <div 
-                  className="absolute inset-0 bg-gradient-primary transition-all duration-300"
-                  style={{
-                    opacity: blockProgress / 100,
-                    transform: `scaleY(${blockProgress / 100})`,
-                    transformOrigin: 'bottom'
-                  }}
-                ></div>
-                
-                {/* Scanning effect for active blocks */}
-                {isRunning && blockProgress > 0 && blockProgress < 100 && (
-                  <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute w-full h-0.5 bg-primary animate-scan opacity-80"></div>
-                  </div>
-                )}
-                
-                {/* Completion sparkle */}
-                {blockProgress >= 100 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-neon-green animate-pulse" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+        
+        {/* Real 3D Scene */}
+        <div className="relative aspect-video rounded-lg overflow-hidden border bg-black">
+          <Canvas
+            shadows
+            camera={{ position: [5, 5, 5], fov: 60 }}
+            gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+          >
+            <PerspectiveCamera makeDefault position={[5, 5, 5]} />
+            <OrbitControls
+              enablePan={true}
+              enableZoom={true}
+              enableRotate={true}
+              autoRotate={!isRunning}
+              autoRotateSpeed={0.5}
+            />
+            
+            <GeometryObjects progress={progress} mode={mode} />
+            <LightingSystem containers={containers} mode={mode} />
+            <PostProcessingEffects containers={containers} mode={mode} />
+          </Canvas>
           
-          {/* Progress overlay */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center space-y-2">
-              {progress > 0 && (
-                <>
-                  <div className="text-4xl font-bold text-primary animate-pulse-neon">
-                    {progress.toFixed(0)}%
-                  </div>
-                  {isRunning && (
-                    <div className="text-sm text-muted-foreground">
-                      Rendering...
-                    </div>
-                  )}
-                </>
-              )}
+          {/* Processing overlay */}
+          {isRunning && progress < 100 && (
+            <div className="absolute top-4 left-4">
+              <Badge variant="secondary" className="animate-pulse bg-black/50 text-white">
+                Ray Tracing: {progress.toFixed(0)}%
+              </Badge>
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Processing Pipeline */}
-        <div className="space-y-4">
-          <h4 className="font-semibold flex items-center gap-2">
-            <Layers className="w-4 h-4" />
-            Processing Pipeline
-          </h4>
-          
-          <div className="flex flex-wrap gap-4 justify-center">
-            {containers.map((container, index) => (
-              <div key={container.id} className="flex items-center gap-2">
-                {/* Container node */}
-                <div className={`
-                  w-12 h-12 rounded-lg border-2 flex items-center justify-center text-xs font-mono
-                  transition-all duration-300
-                  ${container.status === "processing" ? "border-primary bg-primary/20 animate-pulse-neon" :
-                    container.status === "completed" ? "border-neon-green bg-neon-green/20" :
-                    "border-muted bg-muted/20"}
-                `}>
-                  {container.progress.toFixed(0)}%
-                </div>
-                
-                {/* Flow arrow */}
-                {index < containers.length - 1 && mode === "distributed" && (
-                  <div className="flex items-center">
-                    <div className={`
-                      w-8 h-0.5 transition-all duration-300
-                      ${container.progress > 30 ? "bg-primary animate-data-flow" : "bg-muted"}
-                    `}></div>
-                    <div className={`
-                      w-0 h-0 border-l-4 border-y-2 border-transparent transition-all duration-300
-                      ${container.progress > 30 ? "border-l-primary" : "border-l-muted"}
-                    `}></div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {/* Performance comparison */}
-          <div className="text-center text-sm text-muted-foreground">
-            {mode === "single" ? (
-              "Sequential processing: Each stage waits for the previous to complete"
-            ) : (
-              "Parallel processing: Multiple stages execute simultaneously with minimal dependencies"
-            )}
-          </div>
+        
+        {/* Render stats */}
+        <div className="flex justify-between text-sm text-muted-foreground">
+          <span>Resolution: 1920x1080</span>
+          <span>Objects: {mode === "distributed" ? Math.floor((progress / 100) * 15) : Math.floor((progress / 100) * 8)}</span>
+          <span>Quality: {mode === "distributed" ? "High (GPU Accelerated)" : "Standard (CPU)"}</span>
         </div>
       </div>
     </Card>
