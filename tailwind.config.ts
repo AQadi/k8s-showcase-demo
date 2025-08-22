@@ -52,6 +52,16 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Custom neon colors
+				neon: {
+					green: 'hsl(var(--neon-green))',
+					pink: 'hsl(var(--neon-pink))',
+					blue: 'hsl(var(--electric-blue))'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning-orange))',
+					foreground: 'hsl(var(--background))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -88,7 +98,11 @@ export default {
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-neon': 'pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'data-flow': 'data-flow 3s ease-in-out infinite',
+				'scan': 'scan 4s linear infinite',
+				'spin-slow': 'spin 3s linear infinite'
 			}
 		}
 	},

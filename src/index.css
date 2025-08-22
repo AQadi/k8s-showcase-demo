@@ -2,39 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Distributed Ray Tracing Demo - Design System 
+All colors MUST be HSL for consistent theming.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Dark cyberpunk theme */
+    --background: 220 27% 8%;
+    --foreground: 210 20% 90%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 220 25% 12%;
+    --card-foreground: 210 20% 90%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 210 20% 90%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Neon cyan primary */
+    --primary: 180 100% 45%;
+    --primary-foreground: 220 27% 8%;
+    
+    /* Deep blue secondary */
+    --secondary: 240 30% 20%;
+    --secondary-foreground: 210 20% 90%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Subtle gray muted */
+    --muted: 220 15% 18%;
+    --muted-foreground: 210 10% 65%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Electric purple accent */
+    --accent: 280 100% 65%;
+    --accent-foreground: 220 27% 8%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Neon red destructive */
+    --destructive: 0 100% 60%;
+    --destructive-foreground: 210 20% 90%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Subtle borders */
+    --border: 220 15% 25%;
+    --input: 220 15% 25%;
+    --ring: 180 100% 45%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Custom design tokens */
+    --neon-green: 120 100% 50%;
+    --neon-pink: 320 100% 65%;
+    --electric-blue: 200 100% 50%;
+    --warning-orange: 35 100% 55%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--muted)));
+    --gradient-neon: linear-gradient(90deg, hsl(var(--neon-green)), hsl(var(--primary)), hsl(var(--neon-pink)));
+    --gradient-cyber: linear-gradient(135deg, hsl(220 25% 12%), hsl(240 30% 15%), hsl(280 40% 18%));
+    
+    /* Shadows and effects */
+    --shadow-neon: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3);
+    --shadow-glow: 0 0 30px hsl(var(--accent) / 0.4);
+    --shadow-elevated: 0 8px 32px hsl(220 27% 4% / 0.6);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --radius: 0.5rem;
 
@@ -100,6 +128,65 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
+    background: var(--gradient-cyber);
+    min-height: 100vh;
   }
+}
+
+@layer utilities {
+  /* Neon glow effects */
+  .glow-primary {
+    box-shadow: var(--shadow-neon);
+  }
+  
+  .glow-accent {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Gradient backgrounds */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-neon {
+    background: var(--gradient-neon);
+  }
+  
+  .bg-gradient-cyber {
+    background: var(--gradient-cyber);
+  }
+  
+  /* Custom animations */
+  .animate-pulse-neon {
+    animation: pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-data-flow {
+    animation: data-flow 3s ease-in-out infinite;
+  }
+  
+  .animate-scan {
+    animation: scan 4s linear infinite;
+  }
+}
+
+@keyframes pulse-neon {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(var(--primary) / 0.5), 0 0 10px hsl(var(--primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.8), 0 0 40px hsl(var(--primary) / 0.6);
+  }
+}
+
+@keyframes data-flow {
+  0% { transform: translateX(-100%) scaleX(0); }
+  50% { transform: translateX(0%) scaleX(1); }
+  100% { transform: translateX(100%) scaleX(0); }
+}
+
+@keyframes scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
