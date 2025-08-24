@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ray-tracing-app
+  labels:
+    app: ray-tracing-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ray-tracing-app
+  template:
+    metadata:
+      labels:
+        app: ray-tracing-app
+    spec:
+      containers:
+      - name: ray-tracing-app
+        image: ray-tracing-app:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
